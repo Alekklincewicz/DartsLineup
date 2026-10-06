@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Darts Lineup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+
+/* Layout: attendance chart on top, then the fixed 12-match card with a player dropdown per slot. */
+:root{
+  --bg:#F3F6F3; --surface:#FFFFFF; --surface-2:#EAF0EB; --ink:#16201A; --muted:#5B6A61; --line:#D9E1DB;
+  --green:#1D6B45; --red:#C2333B; --amber:#F0A51A; --amber-ink:#3A2600; --amber-soft:#FCE9C2;
+  --ok:#1D6B45; --ok-soft:#DCEFE3; --bad:#C2333B; --bad-soft:#F7DEDF; --shadow:0 8px 24px rgba(20,40,28,.18);
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1512; --surface:#18201B; --surface-2:#1F2923; --ink:#E6EDE8; --muted:#94A39A; --line:#2B3730;
+  --green:#4DB07B; --red:#E5585F; --amber:#E9A227; --amber-ink:#241700; --amber-soft:#3A2D12;
+  --ok:#4DB07B; --ok-soft:#1C3527; --bad:#E5585F; --bad-soft:#3A1E21; --shadow:0 8px 24px rgba(0,0,0,.5);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1512; --surface:#18201B; --surface-2:#1F2923; --ink:#E6EDE8; --muted:#94A39A; --line:#2B3730;
+  --green:#4DB07B; --red:#E5585F; --amber:#E9A227; --amber-ink:#241700; --amber-soft:#3A2D12;
+  --ok:#4DB07B; --ok-soft:#1C3527; --bad:#E5585F; --bad-soft:#3A1E21; --shadow:0 8px 24px rgba(0,0,0,.5);
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:16px;padding-block:20px 64px;display:flex;flex-direction:column;gap:24px}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+h1{font-family:var(--display);font-weight:700;font-size:2.4rem;letter-spacing:.02em;text-transform:uppercase;margin:0;line-height:1}
+.ring{height:6px;margin-top:8px;width:220px;max-width:100%;border-radius:3px;background:repeating-linear-gradient(90deg,var(--red) 0 11px,var(--green) 11px 22px)}
+.summary{color:var(--muted);font-size:.9rem;margin-top:8px;font-variant-numeric:tabular-nums}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:.9rem}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.6;cursor:progress}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn.danger.armed{background:var(--bad);color:#fff}
+.status{font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.status.saved{background:var(--ok-soft);color:var(--ok)}
+.status.err{background:var(--bad-soft);color:var(--bad)}
+.banner{background:var(--amber-soft);border-radius:8px;padding:10px 14px;font-size:.9rem}
+
+h2{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:1.05rem;margin:0;color:var(--muted)}
+.sec-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.note{color:var(--muted);font-size:.85rem}
+
+/* attendance chart */
+.board{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:0;height:38px;text-align:left}
+th{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:.85rem;color:var(--muted);padding:0 10px;background:var(--surface-2)}
+th.g,td.g{text-align:center;border-left:1px solid var(--line);width:11%}
+tbody tr:last-child td{border-bottom:0}
+td.here{width:48px;text-align:center}
+td.here input{width:18px;height:18px;accent-color:var(--green);cursor:pointer}
+td.num{width:36px;text-align:right;padding-right:10px;color:var(--muted);font-weight:600}
+td.name{padding:0 10px;font-weight:600;white-space:nowrap}
+td.name input{width:100%;min-width:90px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--bg)}
+td.cnt{width:84px;text-align:center;border-left:1px solid var(--line)}
+td.g.on{background:var(--amber);color:var(--amber-ink);font-family:var(--display);font-weight:600;font-size:.85rem;letter-spacing:.04em}
+.pill{display:inline-block;min-width:38px;padding:2px 8px;border-radius:999px;background:var(--surface-2);font-weight:600;font-size:.85rem}
+.pill.full{background:var(--green);color:#fff}
+tr.absent td{color:var(--muted);background:var(--surface-2)}
+tr.absent td.g{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--line) 6px 7px)}
+tr.absent td.name{text-decoration:line-through}
+.rm{border:0;background:none;color:var(--bad);cursor:pointer;font-weight:700;padding:0 6px}
+.addrow{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);flex-wrap:wrap}
+.addrow input{flex:1;min-width:140px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--bg)}
+
+/* match card */
+.matches{display:flex;flex-direction:column;list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.match{display:grid;grid-template-columns:36px 120px minmax(0,1fr);gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line)}
+.match:last-child{border-bottom:0}
+.mnum{font-family:var(--display);font-weight:700;font-size:1.2rem;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.mtype{font-family:var(--display);font-weight:700;font-size:1.15rem;letter-spacing:.03em;white-space:nowrap}
+.mtype small{color:var(--muted);font-size:.95rem;margin-right:6px}
+.slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.slot{width:100%;min-width:0;height:36px;border-radius:8px;padding:0 8px;cursor:pointer;font-weight:600;font-size:.92rem;
+  border:1.5px dashed var(--line);background:var(--surface);color:var(--muted)}
+.slot.filled{border:1.5px solid transparent;background:var(--surface-2);color:var(--ink)}
+.slot:hover{border-color:var(--muted)}
+.slot:disabled{cursor:default;opacity:1}
+body.ro .edit-only{display:none}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:.9rem;box-shadow:var(--shadow);z-index:60;max-width:calc(100% - 32px)}
+
+@media (max-width:700px){
+  .match{grid-template-columns:30px minmax(0,1fr)}
+  .slots{grid-column:1 / -1;grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Darts Lineup</h1>
+      <div class="ring" aria-hidden="true"></div>
+      <div class="summary" id="summary"></div>
+    </div>
+    <div class="actions">
+      <span class="status" id="status">Loading</span>
+      <button class="btn primary" id="jpgBtn" type="button">Export to JPG</button>
+      <button class="btn" id="copyBtn" type="button">Copy lineup</button>
+      <button class="btn danger edit-only" id="clearBtn" type="button">Clear lineup</button>
+    </div>
+  </header>
+  <div class="banner" id="roBanner" hidden>You can view this lineup but not change it. </div>
+
+  <section>
+    <div class="sec-head">
+      <h2>Who's playing</h2>
+      <button class="btn edit-only" id="editRosterBtn" type="button">Edit roster</button>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Match card</h2>
+      <span class="note">Max 5 matches per player. Nobody plays the same game twice. Players who can't fill a slot are listed as unavailable.</span>
+    </div>
+    <ol class="matches" id="matches"></ol>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const GAMES=['701','601','501','301','801','Cricket'];
+const MAX=5, LS='darts-lineup-v2';
+const MATCHES=[['3v3','701'],['2v2','501'],['2v2','Cricket'],['3v3','601'],['2v2','301'],['2v2','Cricket'],
+  ['4v4','801'],['2v2','501'],['3v3','701'],['3v3','601'],['2v2','301'],['2v2','Cricket']]
+  .map(([format,game],i)=>({id:'m'+(i+1),format,game,size:+format[0]}));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function defaults(){
+  const names=['TJ','Michael','Jon','Alek','Andrew','Keanan','Kyle','Max','Sean','Matt'];
+  const players=names.map((n,i)=>({id:'p'+(i+1),num:i+1,name:n,attending:n!=='Keanan'}));
+  const fill=[[1,10,7],[2,5],[1,7],[4,9,3],[1,2],[4,10],[9,1,8,5],[4,3],[8,9,2],[10,5,7],[4,8],[3,9]];
+  const slots={};MATCHES.forEach((m,i)=>slots[m.id]=fill[i].map(n=>'p'+n));
+  return normalize({players,slots});
+}
+function normalize(d){
+  const players=(Array.isArray(d&&d.players)?d.players:[]).map(p=>({id:String(p.id),num:+p.num||0,name:String(p.name||'Player'),attending:p.attending!==false}));
+  const ok=new Set(players.filter(p=>p.attending).map(p=>p.id));
+  const src=(d&&d.slots)||{};const slots={};
+  MATCHES.forEach(m=>{const a=Array.isArray(src[m.id])?src[m.id]:[];slots[m.id]=Array.from({length:m.size},(_,i)=>a[i]&&ok.has(a[i])?a[i]:null)});
+  return {players,slots};
+}
+
+let state=defaults();
+try{const s=localStorage.getItem(LS);if(s)state=normalize(JSON.parse(s))}catch(e){}
+let docRef=null, readOnly=false, dirty=false, writing=false, writeTimer=null, editRoster=false;
+
+const P=id=>state.players.find(p=>p.id===id);
+const sorted=()=>[...state.players].sort((a,b)=>a.num-b.num);
+function stats(slots,pid){
+  let count=0;const games={},fmt={};
+  for(const m of MATCHES){const occ=slots[m.id].filter(s=>s===pid).length;if(occ){count+=occ;games[m.game]=(games[m.game]||0)+occ;fmt[m.game]=m.format}}
+  return {count,games,fmt};
+}
+/* Why pid can't go in slot i of match m (null = allowed). */
+function blocker(pid,m,i){
+  const slots={...state.slots,[m.id]:state.slots[m.id].slice()};slots[m.id][i]=pid;
+  const s=stats(slots,pid);
+  if(s.games[m.game]>1)return `plays ${m.game}`;
+  if(s.count>MAX)return `${MAX} matches`;
+  return null;
+}
+
+/* ---------- saving ---------- */
+function setStatus(k){
+  const el=document.getElementById('status');
+  const map={saved:['Saved for the team','saved'],saving:['Saving',''],local:['Saved in this browser',''],err:['Not saved. Check connection','err'],ro:['View only','']};
+  const [t,c]=map[k]||map.local;el.textContent=t;el.className='status '+c;
+}
+function save(){
+  try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}
+  if(!docRef){setStatus('local');return}
+  dirty=true;setStatus('saving');clearTimeout(writeTimer);writeTimer=setTimeout(flush,350);
+}
+async function flush(){
+  if(writing||!dirty)return;writing=true;dirty=false;
+  try{await docRef.set(JSON.parse(JSON.stringify({...state,updatedAt:Date.now()})));setStatus('saved')}
+  catch(e){if(e&&e.code==='invalid_argument')setReadOnly();else setStatus('err')}
+  writing=false;if(dirty)flush();
+}
+function setReadOnly(){readOnly=true;document.body.classList.add('ro');document.getElementById('roBanner').hidden=false;setStatus('ro');editRoster=false;render()}
+
+/* ---------- render ---------- */
+function slotSelect(m,i){
+  const cur=state.slots[m.id][i], cp=cur&&P(cur);
+  let opts=`<option value="">Pick player</option>`;
+  if(cp)opts+=`<option value="${cp.id}" selected>#${cp.num} ${esc(cp.name)}</option>`;
+  const ok=[],no=[];
+  for(const p of sorted()){
+    if(!p.attending||p.id===cur)continue;
+    const b=blocker(p.id,m,i), c=stats(state.slots,p.id).count;
+    (b?no:ok).push(b?`<option disabled>#${p.num} ${esc(p.name)} · ${b}</option>`:`<option value="${p.id}">#${p.num} ${esc(p.name)} · ${c}/${MAX}</option>`);
+  }
+  if(ok.length)opts+=`<optgroup label="Available">${ok.join('')}</optgroup>`;
+  if(no.length)opts+=`<optgroup label="Unavailable">${no.join('')}</optgroup>`;
+  return `<select class="slot ${cp?'filled':''}" id="slot-${m.id}-${i}" data-m="${m.id}" data-i="${i}" ${readOnly?'disabled':''} aria-label="Match ${m.id.slice(1)} slot ${i+1}">${opts}</select>`;
+}
+function render(){
+  const players=sorted();
+  let h=`<table><thead><tr><th>Here</th><th>#</th><th>Player</th>${GAMES.map(g=>`<th class="g">${g}</th>`).join('')}<th class="g">Matches</th>${editRoster?'<th></th>':''}</tr></thead><tbody>`;
+  for(const p of players){
+    const s=stats(state.slots,p.id);
+    h+=`<tr class="${p.attending?'':'absent'}"><td class="here"><input type="checkbox" id="att-${p.id}" data-att="${p.id}" ${p.attending?'checked':''} ${readOnly?'disabled':''} aria-label="${esc(p.name)} attending"></td>
+      <td class="num">${p.num}</td>
+      <td class="name">${editRoster?`<input id="name-${p.id}" data-name="${p.id}" value="${esc(p.name)}" aria-label="Name for player ${p.num}">`:esc(p.name)}</td>
+      ${GAMES.map(g=>s.games[g]?`<td class="g on">${s.fmt[g]}</td>`:'<td class="g"></td>').join('')}
+      <td class="cnt"><span class="pill ${s.count>=MAX?'full':''}">${s.count}/${MAX}</span></td>
+      ${editRoster?`<td><button class="rm" type="button" data-rm="${p.id}" aria-label="Remove ${esc(p.name)}">✕</button></td>`:''}</tr>`;
+  }
+  h+='</tbody></table>';
+  if(editRoster)h+=`<form class="addrow" id="addForm"><input id="newName" placeholder="New player name" autocomplete="off"><button class="btn primary" type="submit">Add player</button></form>`;
+  document.getElementById('board').innerHTML=h;
+  document.getElementById('editRosterBtn').textContent=editRoster?'Done':'Edit roster';
+
+  document.getElementById('matches').innerHTML=MATCHES.map((m,mi)=>`<li class="match">
+    <span class="mnum">${mi+1}</span>
+    <span class="mtype"><small>${m.format}</small>${m.game}</span>
+    <div class="slots">${state.slots[m.id].map((_,i)=>slotSelect(m,i)).join('')}</div>
+  </li>`).join('');
+
+  const total=MATCHES.reduce((a,m)=>a+m.size,0), filled=MATCHES.reduce((a,m)=>a+state.slots[m.id].filter(Boolean).length,0);
+  const here=players.filter(p=>p.attending).length;
+  document.getElementById('summary').textContent=`${MATCHES.length} matches · ${here} of ${players.length} players here · ${filled}/${total} spots filled`;
+}
+
+/* ---------- controls ---------- */
+document.addEventListener('change',e=>{
+  const t=e.target;if(readOnly)return;
+  if(t.dataset.m){
+    const m=MATCHES.find(x=>x.id===t.dataset.m), i=+t.dataset.i, pid=t.value||null;
+    if(pid){const b=blocker(pid,m,i);if(b){render();toast(`${P(pid).name} can't take that slot (${b})`);return}}
+    state.slots[m.id][i]=pid;save();render();
+  }else if(t.dataset.att){
+    const p=P(t.dataset.att);p.attending=t.checked;let removed=0;
+    if(!p.attending)for(const k in state.slots)state.slots[k]=state.slots[k].map(s=>{if(s===p.id){removed++;return null}return s});
+    save();render();if(removed)toast(`${p.name} removed from ${removed} match${removed>1?'es':''}`);
+  }else if(t.dataset.name){
+    const p=P(t.dataset.name);const v=t.value.trim();if(v){p.name=v;save()}render();
+  }
+});
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button[data-rm]');if(!t||readOnly)return;
+  const p=P(t.dataset.rm);state.players=state.players.filter(x=>x.id!==p.id);
+  for(const k in state.slots)state.slots[k]=state.slots[k].map(s=>s===p.id?null:s);
+  save();render();toast(`${p.name} removed from roster`);
+});
+document.getElementById('editRosterBtn').onclick=()=>{editRoster=!editRoster;render()};
+document.getElementById('board').addEventListener('submit',e=>{
+  e.preventDefault();const v=document.getElementById('newName').value.trim();if(!v)return;
+  const num=state.players.reduce((a,p)=>Math.max(a,p.num),0)+1;
+  state.players.push({id:'p'+uid(),num,name:v,attending:true});save();render();document.getElementById('newName').focus();
+});
+let clearArm=null;const clearBtn=document.getElementById('clearBtn');
+clearBtn.onclick=()=>{
+  if(clearArm){clearTimeout(clearArm);clearArm=null;clearBtn.classList.remove('armed');clearBtn.textContent='Clear lineup';
+    for(const k in state.slots)state.slots[k]=state.slots[k].map(()=>null);save();render();toast('Lineup cleared');return}
+  clearBtn.classList.add('armed');clearBtn.textContent='Clear all slots?';
+  clearArm=setTimeout(()=>{clearArm=null;clearBtn.classList.remove('armed');clearBtn.textContent='Clear lineup'},3000);
+};
+document.getElementById('copyBtn').onclick=async()=>{
+  const txt=MATCHES.map((m,i)=>`${i+1}. ${m.format} ${m.game}: ${state.slots[m.id].map(id=>{const p=id&&P(id);return p?`${p.name} (${p.num})`:'TBD'}).join(', ')}`).join('\n');
+  try{await navigator.clipboard.writeText(txt);toast('Lineup copied')}
+  catch(e){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Lineup copied')}catch(_){toast('Copy is blocked here')}ta.remove()}
+};
+let toastT;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2800)}
+
+/* ---------- JPG export (drawn on canvas, light palette) ---------- */
+function drawImage(){
+  const C={bg:'#FFFFFF',ink:'#16201A',muted:'#5B6A61',line:'#D9E1DB',head:'#EAF0EB',amber:'#F0A51A',amberInk:'#3A2600',green:'#1D6B45',red:'#C2333B',absent:'#F0F2F0',slot:'#F3F6F3'};
+  const D='"Barlow Condensed","Arial Narrow",Arial,sans-serif', B='"Barlow",Arial,sans-serif';
+  const players=sorted(), W=1200, pad=40, rh=38, S=2;
+  const ganttH=rh*(players.length+1), cardH=rh*MATCHES.length;
+  const H=pad+60+28+40+ganttH+48+40+cardH+pad;
+  const cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;
+  const x=cv.getContext('2d');x.scale(S,S);
+  x.fillStyle=C.bg;x.fillRect(0,0,W,H);
+  const txt=(t,X,Y,f,c,al='left')=>{x.font=f;x.fillStyle=c;x.textAlign=al;x.textBaseline='middle';x.fillText(t,X,Y)};
+  const hl=(X1,X2,Y)=>{x.strokeStyle=C.line;x.lineWidth=1;x.beginPath();x.moveTo(X1,Y+.5);x.lineTo(X2,Y+.5);x.stroke()};
+  const vl=(X,Y1,Y2)=>{x.strokeStyle=C.line;x.lineWidth=1;x.beginPath();x.moveTo(X+.5,Y1);x.lineTo(X+.5,Y2);x.stroke()};
+  let y=pad;
+  txt('DARTS LINEUP',pad,y+22,`700 44px ${D}`,C.ink);
+  for(let i=0;i<20;i++){x.fillStyle=i%2?C.green:C.red;x.fillRect(pad+i*11,y+50,11,6)}
+  const d=new Date();txt(d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}),W-pad,y+22,`500 16px ${B}`,C.muted,'right');
+  y+=60+28;
+  // gantt
+  txt("WHO'S PLAYING",pad,y+12,`700 18px ${D}`,C.muted);y+=40;
+  const cols={num:pad,name:pad+44,g0:pad+220,gw:(W-2*pad-220-110)/GAMES.length,cnt:W-pad-110};
+  x.fillStyle=C.head;x.fillRect(pad,y,W-2*pad,rh);
+  txt('#',cols.num+30,y+rh/2,`600 15px ${D}`,C.muted,'right');
+  txt('PLAYER',cols.name,y+rh/2,`600 15px ${D}`,C.muted);
+  GAMES.forEach((g,i)=>txt(g.toUpperCase(),cols.g0+cols.gw*i+cols.gw/2,y+rh/2,`600 15px ${D}`,C.muted,'center'));
+  txt('MATCHES',cols.cnt+55,y+rh/2,`600 15px ${D}`,C.muted,'center');
+  const top=y;y+=rh;
+  for(const p of players){
+    const s=stats(state.slots,p.id);
+    if(!p.attending){x.fillStyle=C.absent;x.fillRect(pad,y,W-2*pad,rh)}
+    hl(pad,W-pad,y);
+    txt(String(p.num),cols.num+30,y+rh/2,`600 16px ${B}`,C.muted,'right');
+    txt(p.name+(p.attending?'':'  (out)'),cols.name,y+rh/2,`600 16px ${B}`,p.attending?C.ink:C.muted);
+    GAMES.forEach((g,i)=>{if(s.games[g]){x.fillStyle=C.amber;x.fillRect(cols.g0+cols.gw*i+1,y+1,cols.gw-1,rh-1);txt(s.fmt[g],cols.g0+cols.gw*i+cols.gw/2,y+rh/2,`600 15px ${D}`,C.amberInk,'center')}});
+    txt(p.attending?`${s.count}/${MAX}`:'',cols.cnt+55,y+rh/2,`600 16px ${B}`,s.count>=MAX?C.green:C.ink,'center');
+    y+=rh;
+  }
+  GAMES.forEach((_,i)=>vl(cols.g0+cols.gw*i,top,y));vl(cols.cnt,top,y);
+  x.strokeStyle=C.line;x.strokeRect(pad+.5,top+.5,W-2*pad-1,y-top-1);
+  y+=48;
+  // match card
+  txt('MATCH CARD',pad,y+12,`700 18px ${D}`,C.muted);y+=40;
+  const ctop=y, sx=pad+190, sw=(W-pad-sx-10)/4;
+  MATCHES.forEach((m,mi)=>{
+    if(mi)hl(pad,W-pad,y);
+    txt(String(mi+1),pad+24,y+rh/2,`700 20px ${D}`,C.muted,'center');
+    txt(m.format,pad+56,y+rh/2,`700 18px ${D}`,C.muted);
+    txt(m.game,pad+96,y+rh/2,`700 20px ${D}`,C.ink);
+    state.slots[m.id].forEach((pid,i)=>{
+      const p=pid&&P(pid), X=sx+sw*i;
+      x.fillStyle=p?C.slot:C.bg;x.beginPath();x.roundRect?x.roundRect(X+3,y+4,sw-6,rh-8,6):x.rect(X+3,y+4,sw-6,rh-8);x.fill();
+      if(p){x.fillStyle=C.green;x.beginPath();x.roundRect?x.roundRect(X+9,y+9,26,rh-18,4):x.rect(X+9,y+9,26,rh-18);x.fill();
+        txt(String(p.num),X+22,y+rh/2+1,`700 16px ${D}`,'#FFFFFF','center');txt(p.name,X+44,y+rh/2,`600 16px ${B}`,C.ink)}
+      else txt('TBD',X+14,y+rh/2,`500 15px ${B}`,C.muted);
+    });
+    y+=rh;
+  });
+  x.strokeStyle=C.line;x.strokeRect(pad+.5,ctop+.5,W-2*pad-1,y-ctop-1);
+  return cv;
+}
+document.getElementById('jpgBtn').onclick=async()=>{
+  const btn=document.getElementById('jpgBtn');btn.disabled=true;
+  try{
+    try{await document.fonts.load('700 20px "Barlow Condensed"');await document.fonts.load('600 16px "Barlow"')}catch(e){}
+    const cv=drawImage();
+    const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.92));
+    const name=`darts-lineup-${new Date().toISOString().slice(0,10)}.jpg`;
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast('JPG downloaded');
+  }catch(e){toast('Could not export the image')}
+  btn.disabled=false;
+};
+
+/* ---------- boot ---------- */
+render();setStatus('local');
+</script>
+</body>
+</html>
